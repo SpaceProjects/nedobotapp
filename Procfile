@@ -1,1 +1,1 @@
-web: gunicorn nedobotapp:app --log-file -
+worker: python nedobot.py
