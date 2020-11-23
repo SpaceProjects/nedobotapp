@@ -112,37 +112,33 @@ def balance(memberid):
     return cursor.fetchone()[0]
 
 
-async def f():
+async def f(timenextstart=(time.time()), lastdata=[]):
   r = requests.get("https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=ru&country=RU&allowCountries=RU")
-  msg = ''
-  timenextstart = 0
-  lastdata = []
-  currentdata = []
+  print(timenextstart, lastdata)
+  # по кулдауну
+  if time.time() > timenextstart:
+    timenextstart += timer
+    # парс элементов
+    currentdata = []
+    msg = ' EPIC GAMES INFO:\n'
+    for el in r.json()['data']['Catalog']['searchStore']['elements']:
+      title = el['title']    
+      if len(el['price']['lineOffers'][0]['appliedRules']):
+        msg += f'@ everyone Сейчас бесплатно: {title} \n'
+        currentdata.append(title)
+      else:
+        date = el['effectiveDate'][0:-8]
+        msg += f'Начиная с {date} начнется раздача {title} \n'
 
-  while True:
-    # по кулдауну
-    if time.time() > timenextstart:
-      timenextstart = time.time() + timer
-      # парс элементов
-      currentdata = []
-      msg = '@everyone EPIC GAMES INFO:\n'
-      for el in r.json()['data']['Catalog']['searchStore']['elements']:
-        title = el['title']    
-        if len(el['price']['lineOffers'][0]['appliedRules']):
-          msg += f'Сейчас бесплатно: {title} \n'
-          currentdata.append(title)
-        else:
-          date = el['effectiveDate'][0:-8]
-          msg += f'Начиная с {date} начнется раздача {title} \n'
-
-      if lastdata != currentdata:
-        print('not equal')
-        lastdata = currentdata
-        for guild in client.guilds:
-          if guild.id == 537267521565229056:
-            for channel in guild.channels:
-              if channel.id == 537267521565229058:
-                await channel.send(msg)
+    if lastdata != currentdata:
+      print('not equal')
+      lastdata = currentdata
+      for guild in client.guilds:
+        if guild.id == 537267521565229056:
+          for channel in guild.channels:
+            if channel.id == 609703612150448128:
+              await channel.send(msg)
+  await f(timenextstart, lastdata)
 
 
 # minigames block
