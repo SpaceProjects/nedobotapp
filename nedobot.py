@@ -29,7 +29,7 @@ cards = ('A', 'K', 'Q', 'J', 10, 9, 8, 7, 6, 5, 4, 3, 2)
 cooldown = {'work': 10, }
 pay = {'work': 20, }
 multiplier = 1
-
+timer = 3600
 
 # when connected bl0ck
 @client.event
@@ -45,7 +45,7 @@ async def on_ready():
     print('{0:*^60}'.format('all users: {0}'.format(len(allmembers))))
     print('{0:*^60}'.format('online: {0}'.format(len(onlinemembers))))
     print('{0:#^60}'.format(''))
-
+    await f()
     # for guild in client.guilds:
     #     print(f'{guild}: ')
     #     for channel in guild.channels:
@@ -110,6 +110,39 @@ def updatemoney(memberid, coins):
 def balance(memberid):
     cursor.execute("SELECT coins FROM info WHERE member=?", [memberid])
     return cursor.fetchone()[0]
+
+
+async def f():
+  r = requests.get("https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=ru&country=RU&allowCountries=RU")
+  msg = ''
+  timenextstart = 0
+  lastdata = []
+  currentdata = []
+
+  while True:
+    # по кулдауну
+    if time.time() > timenextstart:
+      timenextstart = time.time() + timer
+      # парс элементов
+      currentdata = []
+      msg = '@everyone EPIC GAMES INFO:\n'
+      for el in r.json()['data']['Catalog']['searchStore']['elements']:
+        title = el['title']    
+        if len(el['price']['lineOffers'][0]['appliedRules']):
+          msg += f'Сейчас бесплатно: {title} \n'
+          currentdata.append(title)
+        else:
+          date = el['effectiveDate'][0:-8]
+          msg += f'Начиная с {date} начнется раздача {title} \n'
+
+      if lastdata != currentdata:
+        print('not equal')
+        lastdata = currentdata
+        for guild in client.guilds:
+          if guild.id == 537267521565229056:
+            for channel in guild.channels:
+              if channel.id == 537267521565229058:
+                await channel.send(msg)
 
 
 # minigames block
