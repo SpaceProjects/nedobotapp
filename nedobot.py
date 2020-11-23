@@ -120,11 +120,11 @@ async def f(timenextstart=(time.time()), lastdata=[]):
     timenextstart += timer
     # парс элементов
     currentdata = []
-    msg = ' EPIC GAMES INFO:\n'
+    msg = '@everyone EPIC GAMES INFO:\n'
     for el in r.json()['data']['Catalog']['searchStore']['elements']:
       title = el['title']    
       if len(el['price']['lineOffers'][0]['appliedRules']):
-        msg += f'@ everyone Сейчас бесплатно: {title} \n'
+        msg += f'Сейчас бесплатно: {title} \n'
         currentdata.append(title)
       else:
         date = el['effectiveDate'][0:-8]
@@ -136,7 +136,7 @@ async def f(timenextstart=(time.time()), lastdata=[]):
       for guild in client.guilds:
         if guild.id == 537267521565229056:
           for channel in guild.channels:
-            if channel.id == 609703612150448128:
+            if channel.id == 537267521565229058:
               await channel.send(msg)
   await f(timenextstart, lastdata)
 
