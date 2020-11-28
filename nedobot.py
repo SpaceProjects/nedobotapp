@@ -35,22 +35,7 @@ timer = 3600
 @client.event
 async def on_ready():
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="на тебя!"))
-    get_all_users()
-    get_online_users()
-    print('{0:#^60}'.format(''))
-    print('{0:*^60}'.format('Logged in as'))
-    print('{0:*^60}'.format(client.user.name))
-    print('{0:*^60}'.format(client.user.id))
-    print('{0:#^60}'.format('USER STATS:'))
-    print('{0:*^60}'.format('all users: {0}'.format(len(allmembers))))
-    print('{0:*^60}'.format('online: {0}'.format(len(onlinemembers))))
-    print('{0:#^60}'.format(''))
     await f()
-    # for guild in client.guilds:
-    #     print(f'{guild}: ')
-    #     for channel in guild.channels:
-    #         print(f"({channel.type}) - {channel.name}")
-    #     print()
 
 
 # define's bl0ck
@@ -373,7 +358,6 @@ bj [ставка] - Блекджек\n\
             if is_enought(message.author.id, bet):
                 message.author = blackjack(message.author.id, message.author, bet)
                 bjplayers.append(message.author)
-                print('[COMMAND]: blackjack')
                 await message.channel.send(blackjack.maininfo(message.author))
             else:
                 await message.channel.send(f'{message.author.mention}, недостаточно nedocoins')
