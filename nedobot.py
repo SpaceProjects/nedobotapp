@@ -9,8 +9,6 @@ import requests
 
 # api bl0ck
 DISCORD_BOT_TOKEN = '611508921919733780'
-BTC_PRICE_URL_coinmarketcap = '\
-https://api.coinmarketcap.com/v1/ticker/bitcoin/?convert=RUB'
 
 
 # variables bl0ck
@@ -35,16 +33,7 @@ timer = 3600
 @client.event
 async def on_ready():
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="на тебя!"))
-    await f()
-
-
-# define's bl0ck
-def get_btc_price():
-    r = requests.get(BTC_PRICE_URL_coinmarketcap)
-    response_json = r.json()
-    usd_price = response_json[0]['price_usd']
-    rub_rpice = response_json[0]['price_rub']
-    return usd_price, rub_rpice
+    await epicgames_parse()
 
 
 def get_all_users():
@@ -97,23 +86,21 @@ def balance(memberid):
     return cursor.fetchone()[0]
 
 
-async def f(timenextstart=(time.time()), lastdata=[]):
+async def epicgames_parse(timenextstart=(time.time()), lastdata=[]):
   r = requests.get("https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=ru&country=RU&allowCountries=RU")
-  print(timenextstart, lastdata)
+#   print(timenextstart, lastdata)
   # по кулдауну
   if time.time() > timenextstart:
     timenextstart += timer
     # парс элементов
     currentdata = []
-    msg = '@everyone EPIC GAMES INFO:\n'
+    msg = 'EPIC GAMES INFO:\n'
     for el in r.json()['data']['Catalog']['searchStore']['elements']:
-      title = el['title']    
-      if len(el['price']['lineOffers'][0]['appliedRules']):
-        msg += f'Сейчас бесплатно: {title} \n'
+      title = el['title']
+      date = el['effectiveDate'][0:-8] 
+      if date.startswith("2022-08"):
         currentdata.append(title)
-      else:
-        date = el['effectiveDate'][0:-8]
-        msg += f'Начиная с {date} начнется раздача {title} \n'
+        msg += f'Начиная с {date[0:10]} начнется раздача {title} \n'
 
     if lastdata != currentdata:
       print('not equal')
@@ -121,9 +108,9 @@ async def f(timenextstart=(time.time()), lastdata=[]):
       for guild in client.guilds:
         if guild.id == 537267521565229056:
           for channel in guild.channels:
-            if channel.id == 537267521565229058:
+            if channel.id == 609703612150448128:
               await channel.send(msg)
-  await f(timenextstart, lastdata)
+    await epicgames_parse(timenextstart, lastdata)
 
 
 # minigames block
@@ -281,14 +268,8 @@ async def on_message(message):
         else:
             print('[Message in {4}/{3}: {2}] {0} : {1}, \n ----------'.format(message.author.name, message.content, time.strftime('[%H:%M:%S]'), message.channel, message.guild))
 
-    # bitcoin price
-    if message.content.startswith('{starting}btcprice'.format(starting=starting)):
-        print('[Command]: btcprice ')
-        btc_price_usd, btc_price_rub = get_btc_price()
-        await message.channel.send("""```bash\n'Цена биткоина на данный момент: \nUSD: """ + str(btc_price_usd) + " | RUB: " + str(btc_price_rub) + '\'```')
-
     # hello function
-    elif message.content.startswith('{starting}привет'.format(starting=starting)):
+    if message.content.startswith('{starting}привет'.format(starting=starting)):
         print('[Command]: Привет!')
         msg = 'Привет, {0.author.mention}'.format(message)
         await message.channel.send(msg)
@@ -333,7 +314,6 @@ async def on_message(message):
 -----\n\
 Список комманд:\n\
 привет - приветственное сообщение;\n\
-btcprice - актуальная цена биткоина;\n\
 check - имена всех, кто онлайн;\n\
 roulette @mention - выбирает случайного победителя\n\
 work - заработок nedocoins\n\
