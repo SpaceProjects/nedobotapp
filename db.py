@@ -1,26 +1,63 @@
 import sqlite3
+import time
+from config import new_worker_balance, cooldown
 
-def connect(dbname, dbtable, args):
-	'''input: dbconnect('dbname', 'dbtable', '(args)')\nUPD: warning! args may be str, concatenate it before assign'''
-	global conn, cursor
-	conn = sqlite3.connect(dbname)
-	cursor = conn.cursor()
-	string = """
-cursor.execute("CREATE TABLE IF NOT EXISTS {1} {2}")""".format(dbname, dbtable, str(args))
-	eval(string)
-	return string
+conn = sqlite3.connect('./nedobase/nedobase.db')
+cursor = conn.cursor()
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS coins
+(member, coins int)""")
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS cooldowns
+(member, work)""")
 
-def insert(dbtable, args):
-	string = """
-cursor.execute("INSERT INTO {0} VALUES {1}")""".format(dbtable, str(args))
-	eval(string); conn.commit(); return string
 
-def update(dbtable, where_what, where_eq, set_what, set_var):
-	string = """
-cursor.execute("UPDATE {0} SET {1} = {2} WHERE {3} = {4}")""".format(dbtable, set_what, set_var, where_what, where_eq)
-	eval(string); conn.commit(); return string
+def is_enought(memberid, need):
+    cursor.execute("SELECT coins FROM coins WHERE member=?", [memberid])
+    s = cursor.fetchall()[0]
+    if s[0] < need:
+        return False
+    else:
+        return True
 
-def select(dbtable, select, where_what, where_eq):
-	string = """
-cursor.execute("SELECT {0} FROM {1} WHERE {2} LIKE {3}")""".format(select, dbtable, where_what, where_eq)
-	eval(string); return cursor.fetchone()[0]
+
+def updatemoney(memberid, coins):
+    cursor.execute("SELECT coins FROM coins WHERE member=?", [memberid])
+    new_balance = cursor.fetchone()[0] + int(coins)
+    cursor.execute("UPDATE coins SET coins=? WHERE member=?", [new_balance, memberid])
+    conn.commit()
+
+def balance(memberid):
+    cursor.execute("SELECT coins FROM coins WHERE member=?", [memberid])
+    return cursor.fetchone()[0]
+
+def is_member_exists(member):
+    cursor.execute("SELECT EXISTS(SELECT member FROM coins WHERE member=?)", [member])
+    coins = cursor.fetchone()[0]
+    cursor.execute("SELECT EXISTS(SELECT work FROM cooldowns WHERE member=?)", [member])
+    cooldowns = cursor.fetchone()[0]
+    return {'coins': coins, 'cooldowns':cooldowns}
+
+def register(member):
+    cursor.execute("INSERT INTO coins VALUES (?,?)", [member, new_worker_balance])
+    cursor.execute("INSERT INTO cooldowns VALUES (?, ?)", [member, round(time.time()) + cooldown['work']])
+    conn.commit()
+
+def set_cooldown(member, skill, cooldown):
+    cursor.execute(f"UPDATE cooldowns SET {skill} = {round(time.time()) + cooldown} WHERE member = {member}")
+    conn.commit()
+
+def get_add_cooldowns(member):
+    cursor.execute(f"SELECT * FROM cooldowns WHERE member={member}")
+    return cursor.fetchone()
+
+def get_cooldown(member, skill):
+    if not is_member_exists(member)['cooldowns']:
+        return 0
+    
+    cursor.execute(f"SELECT {skill} FROM cooldowns WHERE member={member}")
+    return cursor.fetchone()[0] - round(time.time())
+
+def is_cooldown(member, skill):
+    cooldown = get_cooldown(member, skill)
+    return 1 if cooldown >= 0 else 0
